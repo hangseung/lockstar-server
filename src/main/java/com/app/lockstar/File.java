@@ -3,7 +3,6 @@ package com.app.lockstar;
 import javax.persistence.*;
 
 @Entity
-@Table(name = "FILES")
 public class File {
     @Id
     @GeneratedValue(strategy= GenerationType.AUTO)

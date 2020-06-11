@@ -60,7 +60,7 @@ public class UserController {
             return new ResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR);
         }
 
-        user.get().setPublicKey(filePath);
+        user.get().setPublicKey(file.getOriginalFilename());
         userRepository.save(user.get());
 
         return new ResponseEntity(filePath, HttpStatus.ACCEPTED);

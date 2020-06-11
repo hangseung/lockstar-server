@@ -1,6 +1,11 @@
 package com.app.lockstar;
 
+import com.google.common.hash.Hashing;
+
 import javax.persistence.*;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 public class User {
@@ -16,6 +21,10 @@ public class User {
 
     @Column(name = "PUBLIC_KEY")
     private String publicKey;
+
+    @ManyToMany
+    @JoinTable(name = "USER_FILE")
+    private List<File> file = new ArrayList<>();
 
     public Integer getId() {
         return id;
@@ -33,6 +42,10 @@ public class User {
         return publicKey;
     }
 
+    public List<File> getFile() {
+        return file;
+    }
+
     public void setName(String name) {
         this.name = name;
     }
@@ -43,5 +56,11 @@ public class User {
 
     public void setPublicKey(String publicKey) {
         this.publicKey = publicKey;
+    }
+
+    public Boolean isSamePassword(String password) {
+        return this.password.equals(Hashing.sha256()
+                .hashString(password, StandardCharsets.UTF_8)
+                .toString());
     }
 }

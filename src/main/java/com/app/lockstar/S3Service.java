@@ -5,8 +5,14 @@ import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import com.amazonaws.services.s3.model.GetObjectRequest;
 import com.amazonaws.services.s3.model.PutObjectRequest;
+import com.amazonaws.services.s3.model.S3Object;
+import com.amazonaws.services.s3.model.S3ObjectInputStream;
+import com.amazonaws.util.IOUtils;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -57,5 +63,15 @@ public class S3Service {
         toPut.delete();
 
         return s3Client.getUrl(bucket, fileName).toString();
+    }
+
+    public Resource download(String filename) throws IOException {
+        S3Object object = s3Client.getObject(new GetObjectRequest(this.bucket, filename));
+        S3ObjectInputStream objectInputStream = object.getObjectContent();
+        byte[] bytes = IOUtils.toByteArray(objectInputStream);
+
+        Resource resource = new ByteArrayResource(bytes);
+
+        return resource;
     }
 }
