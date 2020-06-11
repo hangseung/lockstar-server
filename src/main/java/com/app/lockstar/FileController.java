@@ -88,10 +88,6 @@ public class FileController {
          */
 
 
-
-        출처: https://offbyone.tistory.com/346 [쉬고 싶은 개발자]
-
-
         return new ResponseEntity(HttpStatus.NOT_ACCEPTABLE);
     }
 }
