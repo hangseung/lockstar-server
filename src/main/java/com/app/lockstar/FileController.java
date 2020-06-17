@@ -47,6 +47,7 @@ public class FileController {
         File newFile = new File();
         newFile.setName(file.getOriginalFilename());
         newFile.setKey(fileKey.getOriginalFilename());
+        newFile.setOwnerUserId(user.getId());
         fileRepository.save(newFile);
 
         return new ResponseEntity(newFile.getId(), HttpStatus.ACCEPTED);
