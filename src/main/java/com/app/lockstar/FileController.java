@@ -8,7 +8,6 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.util.Optional;
 
 @RestController
 @RequestMapping(path="/file")
@@ -17,18 +16,25 @@ public class FileController {
     private FileRepository fileRepository;
 
     @Autowired
-    private UserRepository userRepository;
+    private UserService userService;
 
     @Autowired
     private S3Service s3Service;
 
     @PostMapping
     @ResponseBody
-    public ResponseEntity uploadFile (@RequestParam("file") MultipartFile file, @RequestParam("file_key") MultipartFile fileKey) {
-        String uploadedFilePath, uploadedFileKeyPath;
+    public ResponseEntity uploadFile (@RequestParam("username") String username, @RequestParam String password, @RequestParam("file") MultipartFile file, @RequestParam("file_key") MultipartFile fileKey) {
+        User user;
         try {
-            uploadedFilePath = s3Service.upload(file);
-            uploadedFileKeyPath = s3Service.upload(fileKey);
+            user = userService.signIn(username, password);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new ResponseEntity(e.getMessage(), HttpStatus.BAD_REQUEST);
+        }
+
+        try {
+            s3Service.upload(file);
+            s3Service.upload(fileKey);
         } catch (IOException e) {
             e.printStackTrace();
             return new ResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR);
@@ -37,6 +43,7 @@ public class FileController {
         File newFile = new File();
         newFile.setName(file.getOriginalFilename());
         newFile.setKey(fileKey.getOriginalFilename());
+        newFile.setOwnerUserId(user.getId());
         fileRepository.save(newFile);
 
         return new ResponseEntity(newFile.getId(), HttpStatus.ACCEPTED);
@@ -45,14 +52,14 @@ public class FileController {
     @GetMapping("/{fileId}")
     @ResponseBody
     public ResponseEntity downloadFile (@PathVariable Integer fileId, @RequestParam("username") String username, @RequestParam("password") String password) {
-        Optional<User> sameNameUser = userRepository.findByName(username);
-
-        if (sameNameUser.isEmpty()
-        || !sameNameUser.get().isSamePassword(password)) {
-            return new ResponseEntity(HttpStatus.BAD_REQUEST);
+        User user;
+        try {
+            user = userService.signIn(username, password);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new ResponseEntity(e.getMessage(), HttpStatus.BAD_REQUEST);
         }
 
-        User user = sameNameUser.get();
         for (File file : user.getFile()) {
             if (file.getId().equals(fileId)) {
                 try {

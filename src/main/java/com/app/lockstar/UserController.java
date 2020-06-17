@@ -1,22 +1,20 @@
 package com.app.lockstar;
 
-import com.google.common.hash.Hashing;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.util.Optional;
 
 @RestController
 @RequestMapping(path="/user")
 public class UserController {
 
     @Autowired
-    private UserRepository userRepository;
+    private UserService userService;
 
     @Autowired
     private S3Service s3Service;
@@ -24,32 +22,24 @@ public class UserController {
     @PostMapping(path="/add")
     @ResponseBody
     public ResponseEntity addNewUser (@RequestParam String name, @RequestParam String password) {
-        Optional<User> sameNameUser = userRepository.findByName(name);
-        if (sameNameUser.isPresent()) {
+        try {
+            Integer newUserId = userService.signUp(name, password);
+            return new ResponseEntity(Integer.toString(newUserId), HttpStatus.ACCEPTED);
+        } catch (DataAccessException e) {
+            e.printStackTrace();
             return new ResponseEntity(HttpStatus.BAD_REQUEST);
         }
-
-        User newUser = new User();
-        newUser.setName(name);
-        newUser.setPassword(Hashing.sha256()
-                .hashString(password, StandardCharsets.UTF_8)
-                .toString());
-
-        userRepository.save(newUser);
-
-        return new ResponseEntity(HttpStatus.ACCEPTED);
     }
 
     @PostMapping(path="/key")
     @ResponseBody
-    public ResponseEntity registerKey (@RequestParam("name") String name, @RequestParam("password") String password, @RequestParam("key") MultipartFile file) {
-        Optional<User> user = userRepository.findByName(name);
-        String hashedPassword = Hashing.sha256()
-                .hashString(password, StandardCharsets.UTF_8)
-                .toString();
-        if (user.isEmpty()
-        || !user.get().getPassword().equals(hashedPassword)) {
-            return new ResponseEntity(HttpStatus.BAD_REQUEST);
+    public ResponseEntity registerKey (@RequestParam("name") String username, @RequestParam("password") String password, @RequestParam("key") MultipartFile file) {
+        User user;
+        try {
+            user = userService.signIn(username, password);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new ResponseEntity(e.getMessage(), HttpStatus.BAD_REQUEST);
         }
 
         String filePath;
@@ -60,8 +50,8 @@ public class UserController {
             return new ResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR);
         }
 
-        user.get().setPublicKey(file.getOriginalFilename());
-        userRepository.save(user.get());
+        user.setPublicKey(file.getOriginalFilename());
+        userService.update(user);
 
         return new ResponseEntity(filePath, HttpStatus.ACCEPTED);
     }

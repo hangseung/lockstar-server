@@ -51,7 +51,9 @@ public class User {
     }
 
     public void setPassword(String password) {
-        this.password = password;
+        this.password = Hashing.sha256()
+                .hashString(password, StandardCharsets.UTF_8)
+                .toString();
     }
 
     public void setPublicKey(String publicKey) {
