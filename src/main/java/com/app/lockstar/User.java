@@ -65,4 +65,8 @@ public class User {
                 .hashString(password, StandardCharsets.UTF_8)
                 .toString());
     }
+
+    public void addFile (File file) {
+        this.file.add(file);
+    }
 }

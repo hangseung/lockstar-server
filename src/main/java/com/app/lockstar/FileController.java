@@ -8,14 +8,20 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.security.KeyPair; // [KSY]
-import java.security.KeyPairGenerator; // [KSY]
-import java.security.NoSuchAlgorithmException; // [KSY]
-import java.security.SecureRandom; // [KSY]
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
 
 @RestController
 @RequestMapping(path="/file")
 public class FileController {
+    @Autowired
+    private UserRepository userRepository;
+
     @Autowired
     private FileRepository fileRepository;
 
@@ -95,5 +101,35 @@ public class FileController {
          */
 
         return new ResponseEntity(HttpStatus.NOT_ACCEPTABLE);
+    }
+
+    @PostMapping("/allow/{fileId}")
+    @ResponseBody
+    public ResponseEntity allowUsers (@PathVariable Integer fileId, @RequestParam("username") String username, @RequestParam("password") String password, @RequestParam("usernames") String allowingUsernames) {
+        User user;
+        try {
+            user = userService.signIn(username, password);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new ResponseEntity(e.getMessage(), HttpStatus.BAD_REQUEST);
+        }
+
+        Optional<File> foundFile = fileRepository.findById(fileId);
+        if (foundFile.isEmpty()) {
+            return new ResponseEntity(HttpStatus.BAD_REQUEST);
+        }
+        File file = foundFile.get();
+
+        if (!file.getOwnerUserId().equals(user.getId())) {
+            return new ResponseEntity(HttpStatus.UNAUTHORIZED);
+        }
+
+        List<User> allowingUsers = userRepository.findByNameIn(Arrays.asList(allowingUsernames.split(",")));
+        for (User allowingUser : allowingUsers) {
+            allowingUser.addFile(file);
+            userRepository.save(allowingUser);
+        }
+
+        return new ResponseEntity(HttpStatus.ACCEPTED);
     }
 }
