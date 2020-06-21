@@ -55,8 +55,42 @@ public class FileController {
         newFile.setKey(fileKey.getOriginalFilename());
         newFile.setOwnerUserId(user.getId());
         fileRepository.save(newFile);
+        user.addFile(newFile);
+        userRepository.save(user);
 
         return new ResponseEntity(newFile.getId(), HttpStatus.ACCEPTED);
+    }
+
+    @PostMapping("/{fileId}")
+    @ResponseBody
+    public ResponseEntity replaceFile (@PathVariable Integer fileId, @RequestParam("username") String username, @RequestParam("password") String password, @RequestParam("file") MultipartFile file) {
+        User user;
+        try {
+            user = userService.signIn(username, password);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new ResponseEntity(e.getMessage(), HttpStatus.BAD_REQUEST);
+        }
+
+        if (!user.hasFilePermission(fileId)) {
+            return new ResponseEntity(HttpStatus.NOT_ACCEPTABLE);
+        }
+
+        Optional<File> originalFile = this.fileRepository.findById(fileId);
+        if (originalFile.isEmpty()) {
+            return new ResponseEntity(HttpStatus.BAD_REQUEST);
+        }
+        File editedFile = originalFile.get();
+
+        try {
+            s3Service.upload(file);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        editedFile.setName(file.getOriginalFilename());
+        fileRepository.save(editedFile);
+
+        return new ResponseEntity(HttpStatus.ACCEPTED);
     }
 
     @GetMapping("/{fileId}")

@@ -69,4 +69,13 @@ public class User {
     public void addFile (File file) {
         this.file.add(file);
     }
+
+    public Boolean hasFilePermission (Integer fileId) {
+        for (File file : this.file) {
+            if (file.getId().equals(fileId)) {
+                return true;
+            }
+        }
+        return false;
+    }
 }
