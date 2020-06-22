@@ -70,8 +70,6 @@ public class S3Service {
         S3ObjectInputStream objectInputStream = object.getObjectContent();
         byte[] bytes = IOUtils.toByteArray(objectInputStream);
 
-        Resource resource = new ByteArrayResource(bytes);
-
-        return resource;
+        return new ByteArrayResource(bytes);
     }
 }

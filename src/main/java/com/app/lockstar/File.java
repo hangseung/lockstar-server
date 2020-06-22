@@ -1,6 +1,10 @@
 package com.app.lockstar;
 
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
+
 import javax.persistence.*;
+import java.time.LocalDateTime;
 
 @Entity
 public class File {
@@ -16,6 +20,13 @@ public class File {
 
     @Column(name = "OWNER_USER_ID", nullable = false)
     private Integer ownerUserId;
+
+    @Column(updatable = false)
+    @CreationTimestamp
+    private LocalDateTime createdAt;
+
+    @UpdateTimestamp
+    private LocalDateTime updatedAt;
 
     public Integer getId() {
         return id;
