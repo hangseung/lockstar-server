@@ -55,4 +55,9 @@ public class File {
     public void setOwnerUserId (Integer ownerUserId) {
         this.ownerUserId = ownerUserId;
     }
+
+    public Boolean isExpired () {
+        LocalDateTime current = LocalDateTime.now();
+        return current.isAfter(createdAt.plusMonths(1));
+    }
 }

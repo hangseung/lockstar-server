@@ -122,6 +122,10 @@ public class FileController {
 
         File fileEntity = this.fileRepository.findById(fileId).get();
 
+        if (fileEntity.isExpired()) {
+            return new ResponseEntity("Expired file.", HttpStatus.BAD_REQUEST);
+        }
+
         try {
             Resource fileResource = s3Service.download(fileEntity.getName());
 
@@ -149,6 +153,10 @@ public class FileController {
         }
 
         File fileEntity = this.fileRepository.findById(fileId).get();
+
+        if (fileEntity.isExpired()) {
+            return new ResponseEntity("Expired file.", HttpStatus.BAD_REQUEST);
+        }
 
         try {
             Resource fileKeyResource = s3Service.download(fileEntity.getKey());
