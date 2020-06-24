@@ -27,9 +27,9 @@ public class UserController {
 
     @PostMapping(path="/add")
     @ResponseBody
-    public ResponseEntity addNewUser (@RequestParam String name, @RequestParam String password) {
+    public ResponseEntity addNewUser (@RequestParam("username") String username, @RequestParam("password") String password) {
         try {
-            Integer newUserId = userService.signUp(name, password);
+            Integer newUserId = userService.signUp(username, password);
             return new ResponseEntity(Integer.toString(newUserId), HttpStatus.ACCEPTED);
         } catch (DataAccessException e) {
             e.printStackTrace();
@@ -39,7 +39,7 @@ public class UserController {
 
     @PostMapping(path="/key")
     @ResponseBody
-    public ResponseEntity registerKey (@RequestParam("name") String username, @RequestParam("password") String password, @RequestParam("key") MultipartFile file) {
+    public ResponseEntity registerKey (@RequestParam("username") String username, @RequestParam("password") String password, @RequestParam("key") MultipartFile file) {
         User user;
         try {
             user = userService.signIn(username, password);
@@ -48,18 +48,19 @@ public class UserController {
             return new ResponseEntity(e.getMessage(), HttpStatus.BAD_REQUEST);
         }
 
-        String filePath;
+        String newPublicKeyName;
         try {
-            filePath = s3Service.upload(file);
+            newPublicKeyName = s3Service.upload(file);
         } catch (IOException e) {
             e.printStackTrace();
             return new ResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR);
         }
 
-        user.setPublicKey(file.getOriginalFilename());
+        user.setPublicKey(newPublicKeyName);
+        user.setOriginalPublicKeyName(file.getOriginalFilename());
         userService.update(user);
 
-        return new ResponseEntity(filePath, HttpStatus.ACCEPTED);
+        return new ResponseEntity(HttpStatus.ACCEPTED);
     }
 
     @GetMapping(path="/server_public_key")

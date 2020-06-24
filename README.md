@@ -10,7 +10,7 @@
 
 ```json
 {
-    "name": "[string]",
+    "username": "[string]",
     "password": "[string]"
 }
 ```
@@ -25,7 +25,7 @@
 
 ```json
 {
-    "name": "[string]",
+    "username": "[string]",
     "password": "[string]",
     "key": "[file]"
 }

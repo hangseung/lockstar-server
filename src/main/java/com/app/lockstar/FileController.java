@@ -48,23 +48,26 @@ public class FileController {
             return new ResponseEntity(e.getMessage(), HttpStatus.BAD_REQUEST);
         }
 
+        String newFileName, newFileKeyName;
         try {
-            s3Service.upload(file);
+            newFileName = s3Service.upload(file);
 
             Resource encryptedFileKeyResource = fileService.convertMultipartFileToResource(encryptedFileKey);
             Resource serverPrivateKeyResource = s3Service.download(serverPrivateKeyLocation);
             Key serverPrivateKey = fileService.convertResourceToPrivateKey(serverPrivateKeyResource);
             Resource fileKey = fileService.decryptResourceWithKey(encryptedFileKeyResource, serverPrivateKey);
 
-            s3Service.upload(fileKey);
+            newFileKeyName = s3Service.upload(fileKey);
         } catch (Exception e) {
             e.printStackTrace();
-            return new ResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR);
+            return new ResponseEntity(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
 
         File newFile = new File();
-        newFile.setName(file.getOriginalFilename());
+        newFile.setName(newFileName);
+        newFile.setOriginalFileName(file.getOriginalFilename());
         newFile.setKey(encryptedFileKey.getOriginalFilename());
+        newFile.setKey(newFileKeyName);
         newFile.setOwnerUserId(user.getId());
         fileRepository.save(newFile);
         user.addFile(newFile);
@@ -85,21 +88,24 @@ public class FileController {
         }
 
         if (!user.hasFilePermission(fileId)) {
-            return new ResponseEntity(HttpStatus.NOT_ACCEPTABLE);
+            return new ResponseEntity("No permission.", HttpStatus.NOT_ACCEPTABLE);
         }
 
         Optional<File> originalFile = this.fileRepository.findById(fileId);
         if (originalFile.isEmpty()) {
-            return new ResponseEntity(HttpStatus.BAD_REQUEST);
+            return new ResponseEntity("File does not exist.", HttpStatus.BAD_REQUEST);
         }
         File editedFile = originalFile.get();
 
+        String newFileName;
         try {
-            s3Service.upload(file);
+            newFileName = s3Service.upload(file);
         } catch (IOException e) {
             e.printStackTrace();
+            return new ResponseEntity(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
-        editedFile.setName(file.getOriginalFilename());
+        editedFile.setName(newFileName);
+        editedFile.setOriginalFileName(file.getOriginalFilename());
         fileRepository.save(editedFile);
 
         return new ResponseEntity(HttpStatus.ACCEPTED);
@@ -117,7 +123,7 @@ public class FileController {
         }
 
         if (!user.hasFilePermission(fileId)) {
-            return new ResponseEntity(HttpStatus.NOT_ACCEPTABLE);
+            return new ResponseEntity("No permission.", HttpStatus.NOT_ACCEPTABLE);
         }
 
         File fileEntity = this.fileRepository.findById(fileId).get();
@@ -149,7 +155,7 @@ public class FileController {
         }
 
         if (!user.hasFilePermission(fileId)) {
-            return new ResponseEntity(HttpStatus.NOT_ACCEPTABLE);
+            return new ResponseEntity("No permission.", HttpStatus.NOT_ACCEPTABLE);
         }
 
         File fileEntity = this.fileRepository.findById(fileId).get();
@@ -170,7 +176,7 @@ public class FileController {
                     "attachment; filename=\"" + fileEntity.getName() + "\"").body(encryptedFileKeyResource);
         } catch (Exception e) {
             e.printStackTrace();
-            return new ResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR);
+            return new ResponseEntity(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -187,12 +193,12 @@ public class FileController {
 
         Optional<File> foundFile = fileRepository.findById(fileId);
         if (foundFile.isEmpty()) {
-            return new ResponseEntity(HttpStatus.BAD_REQUEST);
+            return new ResponseEntity("File does not exist", HttpStatus.BAD_REQUEST);
         }
         File file = foundFile.get();
 
         if (!file.getOwnerUserId().equals(user.getId())) {
-            return new ResponseEntity(HttpStatus.UNAUTHORIZED);
+            return new ResponseEntity("No permission", HttpStatus.NOT_ACCEPTABLE);
         }
 
         List<User> allowingUsers = userRepository.findByNameIn(Arrays.asList(allowingUsernames.split(",")));

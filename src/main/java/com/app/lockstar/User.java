@@ -22,6 +22,9 @@ public class User {
     @Column(name = "PUBLIC_KEY")
     private String publicKey;
 
+    @Column(name = "ORIGINAL_PUBLIC_KEY_NAME")
+    private String originalPublicKeyName;
+
     @ManyToMany
     @JoinTable(name = "USER_FILE")
     private List<File> file = new ArrayList<>();
@@ -58,6 +61,10 @@ public class User {
 
     public void setPublicKey(String publicKey) {
         this.publicKey = publicKey;
+    }
+
+    public void setOriginalPublicKeyName (String originalPublicKeyName) {
+        this.originalPublicKeyName = originalPublicKeyName;
     }
 
     public Boolean isSamePassword(String password) {

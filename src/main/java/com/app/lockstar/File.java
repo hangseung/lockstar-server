@@ -15,8 +15,14 @@ public class File {
     @Column(nullable = false)
     private String name;
 
+    @Column(name = "ORIGINAL_FILE_NAME", nullable = false)
+    private String originalFileName;
+
     @Column(name = "FILE_KEY", nullable = false)
     private String key;
+
+    @Column(name = "ORIGINAL_FILE_KEY_NAME", nullable = false)
+    private String originalFileKeyName;
 
     @Column(name = "OWNER_USER_ID", nullable = false)
     private Integer ownerUserId;
@@ -48,8 +54,16 @@ public class File {
         this.name = name;
     }
 
+    public void setOriginalFileName (String originalFileName) {
+        this.originalFileName = originalFileName;
+    }
+
     public void setKey(String key) {
         this.key = key;
+    }
+
+    public void setOriginalFileKeyName (String originalFileKeyName) {
+        this.originalFileKeyName = originalFileKeyName;
     }
 
     public void setOwnerUserId (Integer ownerUserId) {

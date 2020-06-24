@@ -18,6 +18,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Random;
 
 @Service
 public class S3Service {
@@ -46,8 +47,22 @@ public class S3Service {
                 .build();
     }
 
+    private String getRandomString () {
+        int leftLimit = 48, rightLimit = 122;
+        int targetStringLength = 10;
+        Random random = new Random();
+
+        String generatedString = random.ints(leftLimit, rightLimit + 1)
+                .filter(i -> (i <= 57 || i >= 65) && (i <= 90 || i >= 97))
+                .limit(targetStringLength)
+                .collect(StringBuilder::new, StringBuilder::appendCodePoint, StringBuilder::append)
+                .toString();
+
+        return generatedString;
+    }
+
     public String upload(MultipartFile file) throws IOException {
-        String fileName = file.getOriginalFilename();
+        String fileName = this.getRandomString();
 
         File toPut = new File("./storage/" + fileName);
         toPut.createNewFile();
@@ -60,17 +75,17 @@ public class S3Service {
 
         toPut.delete();
 
-        return s3Client.getUrl(bucket, fileName).toString();
+        return fileName;
     }
 
     public String upload (Resource resource) throws IOException {
-        String fileName = resource.getFilename();
+        String fileName = this.getRandomString();
         InputStream inputStream = resource.getInputStream();
         PutObjectRequest request = new PutObjectRequest(bucket, fileName, inputStream, new ObjectMetadata());
 
         s3Client.putObject(request);
 
-        return s3Client.getUrl(bucket, fileName).toString();
+        return fileName;
     }
 
     public Resource download(String filename) throws IOException {
