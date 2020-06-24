@@ -1,5 +1,6 @@
 package com.app.lockstar;
 
+import com.google.gson.JsonObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
@@ -208,5 +209,35 @@ public class FileController {
         }
 
         return new ResponseEntity(HttpStatus.ACCEPTED);
+    }
+
+    @GetMapping("/list")
+    @ResponseBody
+    public ResponseEntity getUsersFileList (@RequestParam("username") String username, @RequestParam("password") String password) {
+        User user;
+        try {
+            user = userService.signIn(username, password);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new ResponseEntity(e.getMessage(), HttpStatus.BAD_REQUEST);
+        }
+
+        JsonObject returnObject = new JsonObject();
+        for (File file : user.getFile()) {
+            JsonObject fileObject = new JsonObject();
+            fileObject.addProperty("file_id", file.getId());
+            fileObject.addProperty("name", file.getOriginalFileName());
+            fileObject.addProperty("created", file.getCreatedAtString());
+            fileObject.addProperty("updated", file.getUpdatedAtString());
+
+            if (file.getOwnerUserId().equals(user.getId())) {
+                returnObject.add("owned", fileObject);
+            }
+            else {
+                returnObject.add("allowed", fileObject);
+            }
+        }
+
+        return new ResponseEntity(returnObject.toString(), HttpStatus.ACCEPTED);
     }
 }

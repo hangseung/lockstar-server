@@ -42,12 +42,24 @@ public class File {
         return name;
     }
 
+    public String getOriginalFileName () {
+        return originalFileKeyName;
+    }
+
     public String getKey() {
         return key;
     }
 
     public Integer getOwnerUserId() {
         return ownerUserId;
+    }
+
+    public String getCreatedAtString () {
+        return createdAt.toString();
+    }
+
+    public String getUpdatedAtString () {
+        return updatedAt.toString();
     }
 
     public void setName(String name) {
