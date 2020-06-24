@@ -5,10 +5,7 @@ import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import com.amazonaws.services.s3.model.GetObjectRequest;
-import com.amazonaws.services.s3.model.PutObjectRequest;
-import com.amazonaws.services.s3.model.S3Object;
-import com.amazonaws.services.s3.model.S3ObjectInputStream;
+import com.amazonaws.services.s3.model.*;
 import com.amazonaws.util.IOUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ByteArrayResource;
@@ -20,6 +17,7 @@ import javax.annotation.PostConstruct;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 
 @Service
 public class S3Service {
@@ -61,6 +59,16 @@ public class S3Service {
         s3Client.putObject(request);
 
         toPut.delete();
+
+        return s3Client.getUrl(bucket, fileName).toString();
+    }
+
+    public String upload (Resource resource) throws IOException {
+        String fileName = resource.getFilename();
+        InputStream inputStream = resource.getInputStream();
+        PutObjectRequest request = new PutObjectRequest(bucket, fileName, inputStream, new ObjectMetadata());
+
+        s3Client.putObject(request);
 
         return s3Client.getUrl(bucket, fileName).toString();
     }

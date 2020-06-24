@@ -1,6 +1,7 @@
 package com.app.lockstar;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -9,8 +10,8 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.security.Key;
 import java.security.NoSuchAlgorithmException;
-import java.security.PublicKey;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -33,9 +34,12 @@ public class FileController {
     @Autowired
     private FileService fileService;
 
+    @Value("${server_private_key_location}")
+    private String serverPrivateKeyLocation;
+
     @PostMapping
     @ResponseBody
-    public ResponseEntity uploadFile (@RequestParam("username") String username, @RequestParam String password, @RequestParam("file") MultipartFile file, @RequestParam("file_key") MultipartFile fileKey) {
+    public ResponseEntity uploadFile (@RequestParam("username") String username, @RequestParam String password, @RequestParam("file") MultipartFile file, @RequestParam("file_key") MultipartFile encryptedFileKey) {
         User user;
         try {
             user = userService.signIn(username, password);
@@ -46,15 +50,21 @@ public class FileController {
 
         try {
             s3Service.upload(file);
+
+            Resource encryptedFileKeyResource = fileService.convertMultipartFileToResource(encryptedFileKey);
+            Resource serverPrivateKeyResource = s3Service.download(serverPrivateKeyLocation);
+            Key serverPrivateKey = fileService.convertResourceToPrivateKey(serverPrivateKeyResource);
+            Resource fileKey = fileService.decryptResourceWithKey(encryptedFileKeyResource, serverPrivateKey);
+
             s3Service.upload(fileKey);
-        } catch (IOException e) {
+        } catch (Exception e) {
             e.printStackTrace();
             return new ResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR);
         }
 
         File newFile = new File();
         newFile.setName(file.getOriginalFilename());
-        newFile.setKey(fileKey.getOriginalFilename());
+        newFile.setKey(encryptedFileKey.getOriginalFilename());
         newFile.setOwnerUserId(user.getId());
         fileRepository.save(newFile);
         user.addFile(newFile);
@@ -144,9 +154,9 @@ public class FileController {
             Resource fileKeyResource = s3Service.download(fileEntity.getKey());
             Resource userPublicKeyResource = s3Service.download(user.getPublicKey());
 
-            PublicKey userPublicKey = fileService.convertResourceToPublicKey(userPublicKeyResource);
+            Key userPublicKey = fileService.convertResourceToPublicKey(userPublicKeyResource);
 
-            Resource encryptedFileKeyResource = fileService.encryptResourceWithPublicKey(fileKeyResource, userPublicKey);
+            Resource encryptedFileKeyResource = fileService.encryptResourceWithKey(fileKeyResource, userPublicKey);
 
             return ResponseEntity.ok().header(HttpHeaders.CONTENT_DISPOSITION,
                     "attachment; filename=\"" + fileEntity.getName() + "\"").body(encryptedFileKeyResource);

@@ -4,17 +4,20 @@ import com.amazonaws.util.IOUtils;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
-import javax.crypto.Cipher;
-import javax.crypto.CipherOutputStream;
-import javax.crypto.NoSuchPaddingException;
-import java.io.*;
+import javax.crypto.*;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.security.InvalidKeyException;
+import java.security.Key;
 import java.security.KeyFactory;
 import java.security.NoSuchAlgorithmException;
-import java.security.PublicKey;
 import java.security.spec.InvalidKeySpecException;
+import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
+import java.util.Base64;
 
 import static java.util.Objects.requireNonNull;
 
@@ -25,7 +28,7 @@ public class FileService {
         return IOUtils.toByteArray(inputStream);
     }
 
-    public PublicKey convertResourceToPublicKey (Resource resource) throws IOException, NoSuchAlgorithmException, InvalidKeySpecException {
+    public Key convertResourceToPublicKey (Resource resource) throws IOException, NoSuchAlgorithmException, InvalidKeySpecException {
         byte[] keyBytes = convertResourceToBytes(resource);
 
         X509EncodedKeySpec spec = new X509EncodedKeySpec(keyBytes);
@@ -33,11 +36,19 @@ public class FileService {
         return kf.generatePublic(spec);
     }
 
-    public Resource encryptResourceWithPublicKey (Resource resource, PublicKey publicKey) throws IOException, NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException {
+    public Key convertResourceToPrivateKey (Resource resource) throws IOException, NoSuchAlgorithmException, InvalidKeySpecException {
+        byte[] keyBytes = convertResourceToBytes(resource);
+
+        PKCS8EncodedKeySpec spec = new PKCS8EncodedKeySpec(keyBytes);
+        KeyFactory kf = KeyFactory.getInstance("RSA");
+        return kf.generatePrivate(spec);
+    }
+
+    public Resource encryptResourceWithKey (Resource resource, Key key) throws IOException, NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException {
         byte[] resourceBytes = convertResourceToBytes(resource);
 
         Cipher cipher = Cipher.getInstance("RSA");
-        cipher.init(Cipher.ENCRYPT_MODE, publicKey);
+        cipher.init(Cipher.ENCRYPT_MODE, key);
         byte[] iv = cipher.getIV();
 
         try (FileOutputStream fileOut = new FileOutputStream(requireNonNull(resource.getFilename()));
@@ -47,5 +58,22 @@ public class FileService {
         }
 
         return new ByteArrayResource(resourceBytes);
+    }
+
+    public Resource decryptResourceWithKey (Resource resource, Key key) throws NoSuchPaddingException, NoSuchAlgorithmException, IOException, InvalidKeyException, BadPaddingException, IllegalBlockSizeException {
+        byte[] resourceBytes = convertResourceToBytes(resource);
+
+        Cipher cipher = Cipher.getInstance("RSA");
+        cipher.init(Cipher.DECRYPT_MODE, key);
+
+        byte[] byteEncrypted = Base64.getDecoder().decode(resourceBytes);
+        byte[] bytePlain = cipher.doFinal(byteEncrypted);
+
+        return new ByteArrayResource(bytePlain);
+    }
+
+    public Resource convertMultipartFileToResource (MultipartFile multipartFile) throws IOException {
+        byte[] bytes = multipartFile.getBytes();
+        return new ByteArrayResource(bytes);
     }
 }
