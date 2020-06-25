@@ -49,9 +49,9 @@ public class FileService {
 
         Cipher cipher = Cipher.getInstance("RSA");
         cipher.init(Cipher.ENCRYPT_MODE, key);
-        
-        byte[] bytePlain = Base64.getEncoder().encode(resourceBytes);
-        byte[] byteEncrypted = cipher.doFinal(bytePlain);
+
+        byte[] bytePlain = cipher.doFinal(resourceBytes);
+        byte[] byteEncrypted = Base64.getEncoder().encode(bytePlain);
 
         return new ByteArrayResource(byteEncrypted);
     }
