@@ -137,7 +137,7 @@ public class FileController {
             Resource fileResource = s3Service.download(fileEntity.getName());
 
             return ResponseEntity.ok().header(HttpHeaders.CONTENT_DISPOSITION,
-                    "attachment; filename=\"" + fileEntity.getName() + "\"").body(fileResource);
+                    "attachment; filename=\"" + fileEntity.getOriginalFileName() + "\"").body(fileResource);
         } catch (Exception e) {
             e.printStackTrace();
             return new ResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR);
@@ -174,7 +174,7 @@ public class FileController {
             Resource encryptedFileKeyResource = fileService.encryptResourceWithKey(fileKeyResource, userPublicKey);
 
             return ResponseEntity.ok().header(HttpHeaders.CONTENT_DISPOSITION,
-                    "attachment; filename=\"" + fileEntity.getName() + "\"").body(encryptedFileKeyResource);
+                    "attachment; filename=\"" + fileEntity.getOriginalFileKeyName() + "\"").body(encryptedFileKeyResource);
         } catch (Exception e) {
             e.printStackTrace();
             return new ResponseEntity(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);

@@ -77,7 +77,7 @@ public class UserController {
             Resource serverPublicKeyResource = s3Service.download(serverPublicKeyLocation);
 
             return ResponseEntity.ok().header(HttpHeaders.CONTENT_DISPOSITION,
-                    "attachment; filename=\"" + serverPublicKeyResource.getFilename() + "\"").body(serverPublicKeyResource);
+                    "attachment; filename=\"" + serverPublicKeyLocation + "\"").body(serverPublicKeyResource);
         } catch (IOException e) {
             e.printStackTrace();
             return new ResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR);

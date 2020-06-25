@@ -43,11 +43,15 @@ public class File {
     }
 
     public String getOriginalFileName () {
-        return originalFileKeyName;
+        return originalFileName;
     }
 
     public String getKey() {
         return key;
+    }
+
+    public String getOriginalFileKeyName () {
+        return originalFileKeyName;
     }
 
     public Integer getOwnerUserId() {
