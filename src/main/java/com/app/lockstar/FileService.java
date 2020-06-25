@@ -6,8 +6,10 @@ import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import javax.crypto.*;
-import java.io.FileOutputStream;
+import javax.crypto.BadPaddingException;
+import javax.crypto.Cipher;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.InvalidKeyException;
@@ -18,8 +20,6 @@ import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.Base64;
-
-import static java.util.Objects.requireNonNull;
 
 @Service
 public class FileService {
@@ -44,20 +44,16 @@ public class FileService {
         return kf.generatePrivate(spec);
     }
 
-    public Resource encryptResourceWithKey (Resource resource, Key key) throws IOException, NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException {
+    public Resource encryptResourceWithKey (Resource resource, Key key) throws IOException, NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, BadPaddingException, IllegalBlockSizeException {
         byte[] resourceBytes = convertResourceToBytes(resource);
 
         Cipher cipher = Cipher.getInstance("RSA");
         cipher.init(Cipher.ENCRYPT_MODE, key);
-        byte[] iv = cipher.getIV();
+        
+        byte[] bytePlain = Base64.getEncoder().encode(resourceBytes);
+        byte[] byteEncrypted = cipher.doFinal(bytePlain);
 
-        try (FileOutputStream fileOut = new FileOutputStream(requireNonNull(resource.getFilename()));
-             CipherOutputStream cipherOut = new CipherOutputStream(fileOut, cipher)) {
-            fileOut.write(iv);
-            cipherOut.write(resourceBytes);
-        }
-
-        return new ByteArrayResource(resourceBytes);
+        return new ByteArrayResource(byteEncrypted);
     }
 
     public Resource decryptResourceWithKey (Resource resource, Key key) throws NoSuchPaddingException, NoSuchAlgorithmException, IOException, InvalidKeyException, BadPaddingException, IllegalBlockSizeException {
