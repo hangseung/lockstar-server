@@ -125,3 +125,18 @@
     "usernames": "[string(usernames separated with comma)]"
 }
 ```
+
+# Get Downloadable File List
+
+**URL** : `/file/list/`
+
+**Method** : `GET`
+
+**Data constraints**
+
+```json
+{
+    "username": "[string]",
+    "password": "[string]"
+}
+```
