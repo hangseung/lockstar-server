@@ -67,8 +67,8 @@ public class FileController {
         File newFile = new File();
         newFile.setName(newFileName);
         newFile.setOriginalFileName(file.getOriginalFilename());
-        newFile.setKey(encryptedFileKey.getOriginalFilename());
         newFile.setKey(newFileKeyName);
+        newFile.setOriginalFileKeyName(encryptedFileKey.getOriginalFilename());
         newFile.setOwnerUserId(user.getId());
         fileRepository.save(newFile);
         user.addFile(newFile);
